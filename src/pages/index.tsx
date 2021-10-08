@@ -1,5 +1,11 @@
 import { GetStaticProps } from 'next';
+import Link from 'next/link';
 
+import Prismic from '@prismicio/client';
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
+import { FiCalendar, FiUser } from 'react-icons/fi';
+import Head from 'next/head';
 import { getPrismicClient } from '../services/prismic';
 
 import commonStyles from '../styles/common.module.scss';
@@ -24,13 +30,77 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-// export default function Home() {
-//   // TODO
-// }
+export default function Home({ postsPagination }: HomeProps): JSX.Element {
+  console.log(postsPagination);
+  return (
+    <>
+      <Head>
+        <title>Spacetravelling</title>
+      </Head>
 
-// export const getStaticProps = async () => {
-//   // const prismic = getPrismicClient();
-//   // const postsResponse = await prismic.query(TODO);
+      <main className={styles.container}>
+        <img src="/images/logo.svg" alt="" />
+        <div className={styles.posts}>
+          {postsPagination.results.map(post => (
+            <Link href="##">
+              <a>
+                <strong>{post.data.title}</strong>
+                <p>{post.data.subtitle}</p>
 
-//   // TODO
-// };
+                <span>
+                  <time>
+                    <FiCalendar size={20} />
+                    {post.first_publication_date}
+                  </time>
+                  <p>
+                    <FiUser size={20} />
+                    {post.data.author}
+                  </p>
+                </span>
+              </a>
+            </Link>
+          ))}
+        </div>
+      </main>
+    </>
+  );
+}
+
+export const getStaticProps: GetStaticProps = async () => {
+  const prismic = getPrismicClient();
+
+  const postsResponse = await prismic.query(
+    [Prismic.predicates.at('document.type', 'posts')],
+    {
+      fetch: ['post.title', 'post.content'],
+      pageSize: 2,
+    }
+  );
+
+  const posts = postsResponse.results.map(post => {
+    return {
+      slug: post.uid,
+      data: {
+        title: post.data.title,
+        subtitle: post.data.subtitle,
+        author: post.data.author,
+      },
+      first_publication_date: format(
+        new Date(post.first_publication_date),
+        'dd eeeeee uuuu',
+        {
+          locale: ptBR,
+        }
+      ),
+      uid: post.uid,
+    };
+  });
+
+  const postsPagination = { results: posts };
+
+  return {
+    props: {
+      postsPagination,
+    },
+  };
+};
