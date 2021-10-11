@@ -42,7 +42,7 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
         <img src="/images/logo.svg" alt="" />
         <div className={styles.posts}>
           {postsPagination.results.map(post => (
-            <Link href="##">
+            <Link key={post.uid} href={`/post/${post.uid}`}>
               <a>
                 <strong>{post.data.title}</strong>
                 <p>{post.data.subtitle}</p>
@@ -72,14 +72,19 @@ export const getStaticProps: GetStaticProps = async () => {
   const postsResponse = await prismic.query(
     [Prismic.predicates.at('document.type', 'posts')],
     {
-      fetch: ['post.title', 'post.content'],
+      fetch: [
+        'post.title',
+        'post.subtitle',
+        'post.author',
+        'post.banner',
+        'post.content',
+      ],
       pageSize: 2,
     }
   );
 
   const posts = postsResponse.results.map(post => {
     return {
-      slug: post.uid,
       data: {
         title: post.data.title,
         subtitle: post.data.subtitle,
@@ -96,7 +101,10 @@ export const getStaticProps: GetStaticProps = async () => {
     };
   });
 
-  const postsPagination = { results: posts };
+  const postsPagination = {
+    next_page: postsResponse.next_page,
+    results: posts,
+  };
 
   return {
     props: {

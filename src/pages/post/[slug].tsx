@@ -1,6 +1,7 @@
-import { format } from 'date-fns';
 import { GetStaticPaths, GetStaticProps } from 'next';
+import Link from 'next/link';
 
+import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import Head from 'next/head';
 import { FiCalendar, FiUser } from 'react-icons/fi';
@@ -32,28 +33,49 @@ interface PostProps {
 }
 
 export default function Post({ post }: PostProps): JSX.Element {
-  console.log(post.data.content);
+  // console.log(post.data.content);
   return (
     <>
       <Head>
         <title>{post.data.title}</title>
       </Head>
 
-      <main>
-        <img src={post.data.banner.url} alt="logo" />
-        <article>
-          <h1>{post.data.title}</h1>
-          <time>
-            <FiCalendar />
-            {post.first_publication_date}
-          </time>
-          <p>
-            <FiUser />
-            {post.data.author}
-          </p>
+      <Link href="/">
+        <img
+          src="/images/logo.svg"
+          alt="spacetravelling"
+          className={styles.logo}
+        />
+      </Link>
 
-          {/* <div dangerouslySetInnerHTML={{ __html: post.data.content }} /> */}
-        </article>
+      <main className={`${styles.container}`}>
+        <img src={post.data.banner.url} alt="logo" />
+        <div className={styles.content}>
+          <span className={styles.postInfo}>
+            <h1>{post.data.title}</h1>
+            <time>
+              <FiCalendar />
+              {post.first_publication_date}
+            </time>
+            <p>
+              <FiUser />
+              {post.data.author}
+            </p>
+          </span>
+
+          <div className={styles.post}>
+            {post.data.content.map(content => (
+              <article>
+                <h1>{content.heading}</h1>
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: RichText.asHtml(content.body),
+                  }}
+                />
+              </article>
+            ))}
+          </div>
+        </div>
       </main>
     </>
   );
@@ -72,21 +94,22 @@ export const getStaticProps: GetStaticProps = async context => {
   const { slug } = context.params;
 
   const prismic = getPrismicClient();
-  console.log(slug);
+
   const response = await prismic.getByUID('posts', String(slug), {});
 
-  // console.log(JSON.stringify(response, null, 2));
-
   const post = {
-    slug: response.uid,
     data: {
       title: response.data.title,
       author: response.data.author,
-      content: {
-        heading: response.data.content.heading,
-        body: RichText.asHtml(response.data.content),
+      content: response.data.content.map(content => {
+        return {
+          heading: content.heading,
+          body: content.body,
+        };
+      }),
+      banner: {
+        url: response.data.main.url,
       },
-      banner: response.data.main.url,
     },
     first_publication_date: format(
       new Date(response.first_publication_date),
@@ -96,8 +119,6 @@ export const getStaticProps: GetStaticProps = async context => {
       }
     ),
   };
-
-  console.log(post);
 
   return {
     props: {
