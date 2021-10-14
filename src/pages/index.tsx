@@ -61,6 +61,8 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
             </Link>
           ))}
         </div>
+
+        <button type="button">carregar mais</button>
       </main>
     </>
   );
@@ -79,7 +81,7 @@ export const getStaticProps: GetStaticProps = async () => {
         'post.banner',
         'post.content',
       ],
-      pageSize: 2,
+      pageSize: 1,
     }
   );
 
@@ -105,6 +107,8 @@ export const getStaticProps: GetStaticProps = async () => {
     next_page: postsResponse.next_page,
     results: posts,
   };
+
+  console.log(postsResponse.next_page);
 
   return {
     props: {
